@@ -1,5 +1,5 @@
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto');
-const PORT=process.env.PORT||10000, KEY=process.env.GEMINI_API_KEY, MODEL=process.env.GEMINI_MODEL||'gemini-2.5-flash', ROOT=__dirname, CACHE=path.join(ROOT,'article-cache.json');
+const PORT=process.env.PORT||10000, KEY=process.env.GEMINI_API_KEY, MODEL=process.env.GEMINI_MODEL||'gemini-3.6-flash', ROOT=__dirname, CACHE=path.join(ROOT,'article-cache.json');
 let cache={}; try{if(fs.existsSync(CACHE))cache=JSON.parse(fs.readFileSync(CACHE,'utf8'));}catch(_){cache={};}
 function send(res,status,data){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));}
 function body(req){return new Promise((resolve,reject)=>{let b='';req.on('data',c=>{b+=c;if(b.length>1000000)reject(new Error('İstek çok büyük.'));});req.on('end',()=>resolve(b));req.on('error',reject);});}
