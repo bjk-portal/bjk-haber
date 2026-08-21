@@ -6,6 +6,11 @@ function send(res,status,data){res.writeHead(status,{'Content-Type':'application
 function body(req){return new Promise((resolve,reject)=>{let b='';req.on('data',c=>{b+=c;if(b.length>1000000)reject(new Error('İstek çok büyük.'));});req.on('end',()=>resolve(b));req.on('error',reject);});}
 function key(t,d){return crypto.createHash('sha256').update(t+'|'+d).digest('hex');}
 function save(){try{fs.writeFileSync(CACHE,JSON.stringify(cache),'utf8')}catch(_){}}
+async function fetchRss(url){
+ const r=await fetch(url,{headers:{'User-Agent':'Mozilla/5.0 SiyahBeyazHaber/1.0'},signal:AbortSignal.timeout(12000)});
+ if(!r.ok)throw new Error(`RSS HTTP ${r.status}`);
+ return await r.text();
+}
 async function generate(title,description,link){
  if(!KEY)throw new Error('GEMINI_API_KEY Render Environment Variables içinde tanımlı değil.');
  const prompt=`Sen Siyah & Beyaz adlı Beşiktaş haber sitesinin kıdemli spor editörüsün.
@@ -35,6 +40,17 @@ Kurallar:
  const text=data?.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('').trim(); if(!text)throw new Error('Gemini boş cevap döndürdü.'); return text;
 }
 http.createServer(async(req,res)=>{try{const u=new URL(req.url,`http://${req.headers.host}`);
+ if(req.method==='GET'&&u.pathname==='/api/news'){
+  const rssUrl='https://news.google.com/rss/search?q=Be%C5%9Fikta%C5%9F&hl=tr&gl=TR&ceid=TR:tr';
+  try{
+   const xml=await fetchRss(rssUrl);
+   res.writeHead(200,{'Content-Type':'application/rss+xml; charset=utf-8','Cache-Control':'public, max-age=300'});
+   return res.end(xml);
+  }catch(e){
+   console.error('RSS hatası:',e.message);
+   return send(res,502,{error:'Haber kaynağına ulaşılamadı.',detail:e.message});
+  }
+ }
  if(req.method==='POST'&&u.pathname==='/api/generate-news'){
   let x;try{x=JSON.parse(await body(req))}catch(_){return send(res,400,{error:'Geçersiz JSON.'})}
   const title=String(x.title||'').trim(),description=String(x.description||'').trim(),link=String(x.link||'').trim();
@@ -56,22 +72,6 @@ http.createServer(async(req,res)=>{try{const u=new URL(req.url,`http://${req.hea
   finally{inFlight.delete(k);}
  }
  if(req.method==='GET'&&u.pathname==='/health')return send(res,200,{status:'ok',geminiConfigured:Boolean(KEY),model:MODEL,cacheEntries:Object.keys(cache).length});
- if(req.method==='GET'&&u.pathname==='/api/news'){
-  const rss='https://www.fotomac.com.tr/rss/besiktas.xml';
-  try{
-    const ac=new AbortController();
-    const timer=setTimeout(()=>ac.abort(),12000);
-    const rr=await fetch(rss,{signal:ac.signal,headers:{'User-Agent':'Mozilla/5.0'}});
-    clearTimeout(timer);
-    if(!rr.ok) throw new Error('RSS HTTP '+rr.status);
-    const xml=await rr.text();
-    res.writeHead(200,{'Content-Type':'application/xml; charset=utf-8','Cache-Control':'public, max-age=120'});
-    return res.end(xml);
-  }catch(e){
-    console.error('RSS hatası:',e.message);
-    return send(res,502,{error:'Haber kaynağına ulaşılamadı.',detail:e.message});
-  }
- }
  if(req.method==='GET'&&(u.pathname==='/'||u.pathname==='/index.html')){const f=fs.readFileSync(path.join(ROOT,'public','index.html'));res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return res.end(f);}
  res.writeHead(404,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify({error:'Bulunamadı.'}));
 }catch(e){console.error(e);send(res,500,{error:e.message||'Sunucu hatası.'})}}).listen(PORT,'0.0.0.0',()=>console.log('Siyah & Beyaz sunucusu '+PORT+' portunda çalışıyor.'));
