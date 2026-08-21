@@ -16,6 +16,6 @@ async function generate(title,description,link){
 http.createServer(async(req,res)=>{try{const u=new URL(req.url,`http://${req.headers.host}`);
  if(req.method==='POST'&&u.pathname==='/api/generate-news'){let x;try{x=JSON.parse(await body(req))}catch(_){return send(res,400,{error:'Geçersiz JSON.'})}const title=String(x.title||'').trim(),description=String(x.description||'').trim(),link=String(x.link||'').trim();if(!title)return send(res,400,{error:'Haber başlığı eksik.'});const k=key(title,description);if(cache[k])return send(res,200,{article:cache[k],cached:true});const article=await generate(title,description,link);cache[k]=article;save();return send(res,200,{article,cached:false});}
  if(req.method==='GET'&&u.pathname==='/health')return send(res,200,{status:'ok',geminiConfigured:Boolean(KEY)});
- if(req.method==='GET'&&(u.pathname==='/'||u.pathname==='/index.html')){const f=fs.readFileSync(path.join(ROOT,'index.html'));res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return res.end(f);}
+ if(req.method==='GET'&&(u.pathname==='/'||u.pathname==='/index.html')){const f=fs.readFileSync(path.join(ROOT,'public','index.html'));res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return res.end(f);}
  res.writeHead(404,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify({error:'Bulunamadı.'}));
 }catch(e){console.error(e);send(res,500,{error:e.message||'Sunucu hatası.'})}}).listen(PORT,'0.0.0.0',()=>console.log('Siyah & Beyaz sunucusu '+PORT+' portunda çalışıyor.'));
