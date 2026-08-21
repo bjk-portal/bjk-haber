@@ -56,6 +56,22 @@ http.createServer(async(req,res)=>{try{const u=new URL(req.url,`http://${req.hea
   finally{inFlight.delete(k);}
  }
  if(req.method==='GET'&&u.pathname==='/health')return send(res,200,{status:'ok',geminiConfigured:Boolean(KEY),model:MODEL,cacheEntries:Object.keys(cache).length});
+ if(req.method==='GET'&&u.pathname==='/api/news'){
+  const rss='https://www.fotomac.com.tr/rss/besiktas.xml';
+  try{
+    const ac=new AbortController();
+    const timer=setTimeout(()=>ac.abort(),12000);
+    const rr=await fetch(rss,{signal:ac.signal,headers:{'User-Agent':'Mozilla/5.0'}});
+    clearTimeout(timer);
+    if(!rr.ok) throw new Error('RSS HTTP '+rr.status);
+    const xml=await rr.text();
+    res.writeHead(200,{'Content-Type':'application/xml; charset=utf-8','Cache-Control':'public, max-age=120'});
+    return res.end(xml);
+  }catch(e){
+    console.error('RSS hatası:',e.message);
+    return send(res,502,{error:'Haber kaynağına ulaşılamadı.',detail:e.message});
+  }
+ }
  if(req.method==='GET'&&(u.pathname==='/'||u.pathname==='/index.html')){const f=fs.readFileSync(path.join(ROOT,'public','index.html'));res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return res.end(f);}
  res.writeHead(404,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify({error:'Bulunamadı.'}));
 }catch(e){console.error(e);send(res,500,{error:e.message||'Sunucu hatası.'})}}).listen(PORT,'0.0.0.0',()=>console.log('Siyah & Beyaz sunucusu '+PORT+' portunda çalışıyor.'));
