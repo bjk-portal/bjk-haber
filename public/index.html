@@ -45,6 +45,11 @@
         .news-mid-banner p { color: #e50914; font-weight: bold; font-size: 1.1rem; letter-spacing: 1px; }
         .news-detail-body { font-size: 1.15rem; color: #e0e0e0; line-height: 1.9; }
         .news-detail-body p { margin-bottom: 20px; }
+        .news-detail-body h3 { margin: 30px 0 12px; color: #fff; font-size: 1.35rem; }
+        .news-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin: 30px 0; }
+        .news-gallery img { width: 100%; height: 220px; object-fit: cover; border-radius: 8px; border: 1px solid #333; }
+        .source-link { margin-top: 30px; }
+        .source-link a { color: #fff; font-weight: bold; }
 
         .squad-section { margin-top: 50px; padding: 25px; background: #1e1e1e; border-radius: 8px; border: 1px solid #333; }
         .squad-table { width: 100%; border-collapse: collapse; text-align: left; color: #fff; margin-top: 15px; }
@@ -56,6 +61,9 @@
         footer { background: #000; padding: 20px 0; border-top: 1px solid #333; margin-top: 40px; font-size: 0.85rem; color: #777; }
         .footer-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
     </style>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z3EB5MLB91"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-Z3EB5MLB91');</script>
 </head>
 <body>
 
@@ -135,162 +143,72 @@
     </footer>
 
     <script>
-    let haberlerVerisi = [];
+        const RSS_FEED_URL = 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.fotomac.com.tr%2Frss%2Fbesiktas.xml';
+        let haberlerVerisi = [];
+        const articleCache = new Map();
 
-    function escapeHTML(text) {
-        if (!text) return '';
-        return String(text)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-
-    async function haberleriCek() {
-        const haberKutusu = document.getElementById('newsGrid');
-
-        try {
-            const response = await fetch('/api/news');
-            if (!response.ok) throw new Error('Haber servisi yanıt vermedi.');
-
-            const data = await response.json();
-            haberlerVerisi = data.items || [];
-
-            if (!haberlerVerisi.length) {
-                haberKutusu.innerHTML =
-                    '<div class="loading">Şu an gösterilecek yeni haber bulunamadı.</div>';
-                return;
-            }
-
-            haberKutusu.innerHTML = '';
-
-            haberlerVerisi.forEach((haber, index) => {
-                const gorsel = haber.thumbnail || haber.enclosure?.link || '';
-                const baslik = haber.title || 'Beşiktaş Haberleri';
-                const ozet = haber.description || 'Haber özeti hazırlanıyor.';
-
-                const kart = document.createElement('article');
-                kart.className = 'card';
-                kart.onclick = () => {
-                    location.hash = 'haber-' + index;
-                };
-
-                const img = document.createElement('img');
-                img.src = gorsel || 'https://via.placeholder.com/400x200?text=Siyah+Beyaz';
-                img.alt = baslik;
-                img.onerror = function () {
-                    this.src = 'https://via.placeholder.com/400x200?text=Siyah+Beyaz';
-                };
-
-                const body = document.createElement('div');
-                body.className = 'card-body';
-
-                const tag = document.createElement('span');
-                tag.className = 'tag';
-                tag.textContent = 'BEŞİKTAŞ';
-
-                const title = document.createElement('h3');
-                title.textContent = baslik;
-
-                const paragraph = document.createElement('p');
-                paragraph.textContent =
-                    ozet.length > 220 ? ozet.substring(0, 220) + '...' : ozet;
-
-                const button = document.createElement('button');
-                button.className = 'read-btn';
-                button.textContent = 'Detaylı Haberi Oku →';
-
-                body.append(tag, title, paragraph, button);
-                kart.append(img, body);
-                haberKutusu.appendChild(kart);
-            });
-
-            sayfaYonlendir();
-
-        } catch (error) {
-            console.error(error);
-            haberKutusu.innerHTML =
-                '<div class="loading">Haberler yüklenemedi. Sunucunun çalıştığından emin olun.</div>';
+        function temizMetin(htmlText = '') {
+            return htmlText.replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<style[\s\S]*?<\/style>/gi,'').replace(/<[^>]*>/g,' ').replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').replace(/&quot;/gi,'"').replace(/&#39;/gi,"'").replace(/Devamını okuyun/gi,'').replace(/Devamı için tıklayınız/gi,'').replace(/\s+/g,' ').trim();
         }
-    }
-
-    async function haberAc(index) {
-        const haber = haberlerVerisi[index];
-        if (!haber) return;
-
-        document.getElementById('homePage').style.display = 'none';
-        document.getElementById('singleNewsPage').style.display = 'block';
-
-        document.getElementById('detailTitle').textContent =
-            haber.title || 'Beşiktaş Haberleri';
-
-        const detailImg = document.getElementById('detailImg');
-        detailImg.src =
-            haber.thumbnail ||
-            haber.enclosure?.link ||
-            'https://via.placeholder.com/800x450?text=Siyah+Beyaz';
-        detailImg.alt = haber.title || 'Haber Görseli';
-
-        const detailBody = document.getElementById('detailBody');
-        detailBody.innerHTML =
-            '<div class="loading">Haber yapay zekâ ile hazırlanıyor...</div>';
-
-        try {
-            const response = await fetch('/api/generate-news', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    index: index
-                })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Haber oluşturulamadı.');
-            }
-
-            detailBody.innerHTML = data.html;
-
-            if (typeof gtag === 'function') {
-                gtag('event', 'view_news', {
-                    news_title: haber.title || ''
-                });
-            }
-
-        } catch (error) {
-            console.error(error);
-            detailBody.innerHTML = `
-                <p>
-                    Haber metni şu anda oluşturulamadı.
-                    Lütfen birkaç saniye sonra tekrar deneyin.
-                </p>
-                <p><strong>Kaynak özeti:</strong><br>${escapeHTML(haber.description || '')}</p>
-            `;
+        function gorselleriBul(haber) {
+            const bulunan=[]; const ilk=haber.thumbnail||haber.enclosure?.link; if(ilk) bulunan.push(ilk);
+            [...(haber.description||'').matchAll(/<img[^>]+src=["']([^"']+)["']/gi)].forEach(m=>{if(m[1]&&!bulunan.includes(m[1])) bulunan.push(m[1]);});
+            return bulunan.slice(0,5);
         }
-
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function sayfaYonlendir() {
-        const hash = window.location.hash;
-
-        if (hash.startsWith('#haber-')) {
-            const index = parseInt(hash.replace('#haber-', ''), 10);
-
-            if (!isNaN(index) && haberlerVerisi[index]) {
-                haberAc(index);
-            }
-        } else {
-            document.getElementById('singleNewsPage').style.display = 'none';
-            document.getElementById('homePage').style.display = 'block';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        function escapeHtml(value=''){return value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+        function metniHTMLYap(metin=''){
+            return metin.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).map(s=>{
+                const e=escapeHtml(s);
+                if(/^#{1,3}\s+/.test(s)) return `<h3>${e.replace(/^#{1,3}\s+/,'')}</h3>`;
+                return `<p>${e}</p>`;
+            }).join('');
         }
-    }
-
-    window.addEventListener('hashchange', sayfaYonlendir);
-    document.addEventListener('DOMContentLoaded', haberleriCek);
-</script>
+        async function haberleriCek(){
+            const kutu=document.getElementById('newsGrid');
+            try{
+                const response=await fetch(RSS_FEED_URL); const data=await response.json();
+                if(data.status==='ok'&&data.items.length){
+                    kutu.innerHTML=''; haberlerVerisi=data.items;
+                    haberlerVerisi.forEach((haber,index)=>{
+                        const g=gorselleriBul(haber)[0]||'https://via.placeholder.com/400x200?text=Siyah+Beyaz';
+                        const o=temizMetin(haber.description).slice(0,180)+'...';
+                        kutu.innerHTML+=`<article class="card" onclick="location.hash='haber-${index}'"><img src="${escapeHtml(g)}" alt="Haber Görseli" onerror="this.src='https://via.placeholder.com/400x200?text=Siyah+Beyaz'"><div class="card-body"><span class="tag">SON DAKİKA</span><h3>${escapeHtml(haber.title||'')}</h3><p>${escapeHtml(o)}</p><button class="read-btn">Detaylı Haberi Oku →</button></div></article>`;
+                    });
+                    sayfaYonlendir();
+                } else kutu.innerHTML='<div class="loading">Şu an gösterilecek yeni haber bulunamadı.</div>';
+            }catch(e){console.error(e);kutu.innerHTML='<div class="loading">Haberler yüklenemedi.</div>';}
+        }
+        async function haberAc(index){
+            const haber=haberlerVerisi[index]; if(!haber)return;
+            const gorseller=gorselleriBul(haber), ana=gorseller[0]||'https://via.placeholder.com/1200x600?text=Siyah+Beyaz';
+            const kaynak=temizMetin(haber.description), key=`${haber.title}|${kaynak}`;
+            document.getElementById('detailTitle').innerText=haber.title;
+            document.getElementById('detailImg').src=ana;
+            document.getElementById('detailImg').onerror=function(){this.src='https://via.placeholder.com/1200x600?text=Siyah+Beyaz';};
+            document.getElementById('homePage').style.display='none'; document.getElementById('singleNewsPage').style.display='block'; window.scrollTo(0,0);
+            const body=document.getElementById('detailBody');
+            if(articleCache.has(key)){detayliHaberGoster(articleCache.get(key),gorseller,haber.link);return;}
+            body.innerHTML='<div class="loading"><p>Yapay zekâ haberi detaylandırıyor...</p><p style="font-size:.9rem;margin-top:8px">Yaklaşık 1.000+ kelimelik özgün haber hazırlanıyor.</p></div>';
+            try{
+                const r=await fetch('/api/generate-news',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:haber.title||'',description:kaynak,link:haber.link||''})});
+                const result=await r.json(); if(!r.ok||!result.article) throw new Error(result.error||'AI haber üretilemedi');
+                articleCache.set(key,result.article); detayliHaberGoster(result.article,gorseller,haber.link);
+            }catch(e){
+                console.error(e); detayliHaberGoster(`## Haber Özeti\n${kaynak||'Kaynak metni bulunamadı.'}\n\n## Bilgi\nYapay zekâ ile genişletilmiş haber şu anda oluşturulamadı; bu nedenle kaynak metni gösteriliyor.`,gorseller,haber.link);
+            }
+        }
+        function detayliHaberGoster(metin,gorseller,kaynakLink){
+            const galeri=gorseller.length>1?`<div class="news-gallery">${gorseller.map(src=>`<img src="${escapeHtml(src)}" alt="Haber görseli" onerror="this.style.display='none'">`).join('')}</div>`:'';
+            const reklam='<div class="ad-container"><div class="ad-box"><span>- REKLAM ALANI -</span>Haber İçi 728x90 veya Esnek Banner</div></div>';
+            const kaynakLinkHtml=kaynakLink?`<p class="source-link"><a href="${escapeHtml(kaynakLink)}" target="_blank" rel="noopener noreferrer">Kaynak haberi görüntüle →</a></p>`:'';
+            document.getElementById('detailBody').innerHTML=metniHTMLYap(metin)+galeri+reklam+kaynakLinkHtml;
+        }
+        function sayfaYonlendir(){
+            const hash=window.location.hash;
+            if(hash.startsWith('#haber-')){const i=parseInt(hash.replace('#haber-',''));if(!isNaN(i)&&haberlerVerisi[i])haberAc(i);}
+            else{document.getElementById('singleNewsPage').style.display='none';document.getElementById('homePage').style.display='block';window.scrollTo(0,0);}
+        }
+        window.addEventListener('hashchange',sayfaYonlendir); document.addEventListener('DOMContentLoaded',haberleriCek);
+    </script>
 </body>
 </html>
