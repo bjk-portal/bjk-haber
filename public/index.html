@@ -205,7 +205,11 @@ const data=await response.json();
 if(!response.ok)throw new Error(data.error||'Haber oluşturulamadı');
 
 const html=markdownToHtml(data.article||'');
+const fallbackNote=data.type==='fallback'
+? `<div style="margin:0 0 20px;padding:12px 14px;border:1px solid #444;border-radius:6px;background:#151515;color:#aaa;font-size:.9rem">AI özeti şu anda kullanılamıyor; haber kaynak metninden gösteriliyor. Kota açıldığında yeni haberlerde AI özeti otomatik kullanılacaktır.</div>`
+: '';
 document.getElementById('detailBody').innerHTML=`
+${fallbackNote}
 ${html}
 <div class="ad-container">
 <div class="ad-box"><span>- REKLAM ALANI -</span>Haber İçi 728x90 veya Esnek Banner</div>

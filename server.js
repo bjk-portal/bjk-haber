@@ -8,8 +8,13 @@ const KEY = process.env.GEMINI_API_KEY;
 const MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
 const ROOT = __dirname;
 const CACHE = path.join(ROOT, "article-cache.json");
-
 const RSS_URL = "https://www.fotomac.com.tr/rss/besiktas.xml";
+
+// Gemini kotası dolduğunda siteyi tamamen durdurmuyoruz.
+// Bir kez 429 alınca belirli süre yeni Gemini isteği göndermeyip RSS içeriğine düşeriz.
+let geminiCooldownUntil = 0;
+let geminiCooldownSeconds = 60;
+let generationInFlight = new Map();
 
 let cache = {};
 try {
@@ -18,10 +23,11 @@ try {
   cache = {};
 }
 
-function send(res, status, data) {
+function send(res, status, data, extraHeaders = {}) {
   res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store"
+    "Cache-Control": "no-store",
+    ...extraHeaders
   });
   res.end(JSON.stringify(data));
 }
@@ -93,14 +99,7 @@ function parseRss(xml) {
     const thumbnail = imageFromBlock(block);
 
     if (title) {
-      items.push({
-        title,
-        link,
-        description,
-        pubDate,
-        thumbnail,
-        source: "Fotomaç"
-      });
+      items.push({ title, link, description, pubDate, thumbnail, source: "Fotomaç" });
     }
   }
   return items;
@@ -115,22 +114,57 @@ async function getNews() {
   }
 
   const r = await fetch(RSS_URL, {
-    headers: { "User-Agent": "SiyahBeyazHaber/1.0" }
+    headers: { "User-Agent": "SiyahBeyazHaber/2.0" }
   });
 
   if (!r.ok) throw new Error(`RSS alınamadı: HTTP ${r.status}`);
 
   const xml = await r.text();
   const items = parseRss(xml);
-
   if (!items.length) throw new Error("RSS içinde haber bulunamadı.");
 
   rssCache = { items, fetchedAt: Date.now() };
   return items;
 }
 
+function isQuotaError(status, message = "") {
+  return status === 429 || /quota|rate.?limit|exceeded your current quota|limit:\s*\d+/i.test(message);
+}
+
+function retrySecondsFrom(message = "") {
+  const m = message.match(/retry in\s+([0-9.]+)\s*s/i);
+  if (m) return Math.max(15, Math.ceil(Number(m[1])));
+  return 60;
+}
+
+function setGeminiCooldown(seconds) {
+  geminiCooldownSeconds = Math.max(15, Math.min(3600, Number(seconds) || 60));
+  geminiCooldownUntil = Date.now() + geminiCooldownSeconds * 1000;
+}
+
+function fallbackArticle(title, description, link) {
+  const clean = stripHtml(description);
+  const sourceText = clean || "Bu haberin kaynak metni şu anda sınırlı bilgi içeriyor.";
+  return [
+    `## ${title}`,
+    sourceText,
+    `## Haber Özeti`,
+    `Bu içerik, kaynak haberin mevcut açıklamasındaki bilgiler temel alınarak hazırlanmıştır. Kaynak metinde yer almayan gelişmeler doğrulanmadan eklenmemiştir.`,
+    `## Kaynak`,
+    link ? `Kaynak haber: ${link}` : `Kaynak: Fotomaç RSS`
+  ].join("\n\n");
+}
+
 async function generate(title, description, link) {
   if (!KEY) throw new Error("GEMINI_API_KEY Render Environment Variables içinde tanımlı değil.");
+
+  if (Date.now() < geminiCooldownUntil) {
+    const remaining = Math.ceil((geminiCooldownUntil - Date.now()) / 1000);
+    const e = new Error(`Gemini kotası geçici olarak dolu. RSS içeriği kullanılacak. Yaklaşık ${remaining} saniye sonra tekrar denenebilir.`);
+    e.quota = true;
+    e.retrySeconds = remaining;
+    throw e;
+  }
 
   const prompt = `Sen Siyah & Beyaz adlı Beşiktaş haber sitesinin kıdemli spor editörüsün.
 
@@ -144,12 +178,12 @@ KAYNAK LİNKİ:
 ${link || "Yok"}
 
 Kurallar:
-- Türkçe, yaklaşık 1000-1500 kelimelik özgün ve ayrıntılı haber yaz.
-- En az 7 ayrı bölüm kullan; bölüm başlıklarını ## ile başlat.
+- Türkçe, yaklaşık 700-1000 kelimelik özgün ve ayrıntılı haber yaz.
+- 5-7 bölüm kullan; bölüm başlıklarını ## ile başlat.
 - Haber başlığının gerçek konusuna odaklan.
 - Kaynakta olmayan transfer, skor, tarih, sakatlık, açıklama, karar veya alıntı UYDURMA.
-- Kaynak kısa ise konunun sportif anlamını ve olası etkilerini analiz et; kesin olmayan çıkarımları açıkça olasılık/değerlendirme olarak belirt.
-- Doğal spor gazetesi üslubu kullan; klişe ve konu dışı genel girişlerden kaçın.
+- Kaynak kısa ise yalnızca kaynakta doğrulanabilen bilgileri açıkla ve sportif bağlamı ihtiyatlı biçimde yorumla.
+- Kesin olmayan çıkarımları kesin bilgi gibi sunma.
 - HTML veya tablo kullanma.`;
 
   const url =
@@ -161,26 +195,46 @@ Kurallar:
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 6000
-      }
+      generationConfig: { temperature: 0.7, maxOutputTokens: 3500 }
     })
   });
 
-  const data = await r.json();
+  const data = await r.json().catch(() => ({}));
+  const message = data?.error?.message || `Gemini HTTP ${r.status}`;
 
   if (!r.ok) {
-    throw new Error(data?.error?.message || `Gemini HTTP ${r.status}`);
+    if (isQuotaError(r.status, message)) {
+      const seconds = retrySecondsFrom(message);
+      setGeminiCooldown(seconds);
+      const e = new Error(message);
+      e.quota = true;
+      e.retrySeconds = seconds;
+      throw e;
+    }
+    throw new Error(message);
   }
 
-  const text = data?.candidates?.[0]?.content?.parts
-    ?.map(p => p.text || "")
-    .join("")
-    .trim();
-
+  const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("").trim();
   if (!text) throw new Error("Gemini boş cevap döndürdü.");
   return text;
+}
+
+async function generateOnce(k, title, description, link) {
+  if (generationInFlight.has(k)) return generationInFlight.get(k);
+
+  const job = (async () => {
+    try {
+      const article = await generate(title, description, link);
+      cache[k] = { article, createdAt: Date.now(), type: "gemini" };
+      save();
+      return { article, type: "gemini", cached: false };
+    } finally {
+      generationInFlight.delete(k);
+    }
+  })();
+
+  generationInFlight.set(k, job);
+  return job;
 }
 
 function markdownToHtml(md) {
@@ -193,10 +247,7 @@ function markdownToHtml(md) {
     .split(/\n\s*\n/)
     .map(p => p.trim())
     .filter(Boolean)
-    .map(p => {
-      if (p.startsWith("<h3>")) return p;
-      return `<p>${p.replace(/\n/g, "<br>")}</p>`;
-    })
+    .map(p => p.startsWith("<h3>") ? p : `<p>${p.replace(/\n/g, "<br>")}</p>`)
     .join("");
 }
 
@@ -204,46 +255,62 @@ http.createServer(async (req, res) => {
   try {
     const u = new URL(req.url, `http://${req.headers.host}`);
 
-    // RSS haberlerini Render üzerinden sunuyoruz.
     if (req.method === "GET" && u.pathname === "/api/news") {
       try {
         const items = await getNews();
-        return send(res, 200, { status: "ok", items });
+        return send(res, 200, { status: "ok", items, cached: Date.now() - rssCache.fetchedAt < RSS_TTL });
       } catch (e) {
         console.error("RSS hatası:", e);
         return send(res, 502, { status: "error", error: e.message });
       }
     }
 
-    // Gemini yalnızca kullanıcı haber detayını açtığında çağrılır.
     if (req.method === "POST" && u.pathname === "/api/generate-news") {
       let x;
-      try {
-        x = JSON.parse(await body(req));
-      } catch (_) {
-        return send(res, 400, { error: "Geçersiz JSON." });
-      }
+      try { x = JSON.parse(await body(req)); }
+      catch (_) { return send(res, 400, { error: "Geçersiz JSON." }); }
 
       const title = String(x.title || "").trim();
       const description = String(x.description || "").trim();
       const link = String(x.link || "").trim();
-
       if (!title) return send(res, 400, { error: "Haber başlığı eksik." });
 
       const k = hashKey(title, description);
+      const cached = cache[k];
 
-      if (cache[k]) {
-        return send(res, 200, { article: cache[k], cached: true });
+      if (cached?.article) {
+        return send(res, 200, {
+          article: cached.article,
+          cached: true,
+          type: cached.type || "gemini"
+        });
       }
 
       try {
-        const article = await generate(title, description, link);
-        cache[k] = article;
-        save();
-        return send(res, 200, { article, cached: false });
+        const result = await generateOnce(k, title, description, link);
+        return send(res, 200, result);
       } catch (e) {
+        // Kota hatasında kullanıcıya hata sayfası göstermiyoruz.
+        // Kaynak RSS metnini güvenli biçimde gösteriyoruz.
+        if (e.quota) {
+          const article = fallbackArticle(title, description, link);
+          return send(res, 200, {
+            article,
+            cached: false,
+            type: "fallback",
+            quota: true,
+            retrySeconds: e.retrySeconds || geminiCooldownSeconds
+          });
+        }
+
         console.error("Gemini hatası:", e);
-        return send(res, 502, { error: e.message || "Gemini hatası." });
+        const article = fallbackArticle(title, description, link);
+        return send(res, 200, {
+          article,
+          cached: false,
+          type: "fallback",
+          error: e.message || "Gemini kullanılamadı."
+        });
       }
     }
 
@@ -251,14 +318,14 @@ http.createServer(async (req, res) => {
       return send(res, 200, {
         status: "ok",
         geminiConfigured: Boolean(KEY),
-        model: MODEL
+        model: MODEL,
+        geminiCooldown: Date.now() < geminiCooldownUntil,
+        cooldownRemaining: Math.max(0, Math.ceil((geminiCooldownUntil - Date.now()) / 1000)),
+        cachedArticles: Object.keys(cache).length
       });
     }
 
-    if (
-      req.method === "GET" &&
-      (u.pathname === "/" || u.pathname === "/index.html")
-    ) {
+    if (req.method === "GET" && (u.pathname === "/" || u.pathname === "/index.html")) {
       const f = fs.readFileSync(path.join(ROOT, "public", "index.html"));
       res.writeHead(200, {
         "Content-Type": "text/html; charset=utf-8",
