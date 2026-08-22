@@ -51,7 +51,7 @@
         .sports-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 25px; }
         .sports-card { background: #121212; border: 1px solid #333; border-radius: 8px; padding: 18px; overflow: hidden; }
         .sports-card h3 { margin-bottom: 14px; font-size: 1.15rem; }
-        .sports-widget { min-height: 120px; }
+        .sports-widget { min-height: 220px; width: 100%; }
         .sports-note { color:#777; font-size:.78rem; margin-top:10px; }
         @media (min-width: 900px) { .sports-grid { grid-template-columns: 1fr 1fr; } }
     </style>
@@ -70,6 +70,35 @@
     </div>
 
     <div id="homePage">
+        <section class="sports-section">
+            <h2 class="section-title">Beşiktaş Maç Merkezi</h2>
+            <div class="sports-grid">
+                <div class="sports-card">
+                    <h3>⚽ Beşiktaş Maçları</h3>
+                    <div class="sports-widget"
+                         data-widget-type="entityScores"
+                         data-entity-type="team"
+                         data-entity-id="947"
+                         data-lang="tr"
+                         data-widget-id="adcea188-ce4c-4083-bc35-e22e994887f7">
+                    </div>
+                    <div class="sports-note">Canlı skorlar, fikstür ve sonuçlar 365Scores verileriyle otomatik güncellenir.</div>
+                </div>
+
+                <div class="sports-card">
+                    <h3>🏆 Trendyol Süper Lig Puan Durumu</h3>
+                    <div class="sports-widget"
+                         data-widget-type="entityStandings"
+                         data-entity-type="league"
+                         data-entity-id="78"
+                         data-lang="tr"
+                         data-widget-id="7599e36f-7682-45bb-af20-131557226bdb">
+                    </div>
+                    <div class="sports-note">Puan durumu canlı maç sonuçlarıyla güncellenir.</div>
+                </div>
+            </div>
+        </section>
+
         <h2 class="section-title">Gündemdeki Haberler</h2>
         <div class="news-grid" id="newsGrid">
             <div class="loading">Güncel Beşiktaş haberleri yükleniyor...</div>
@@ -99,34 +128,7 @@
             </div>
         </section>
 
-        <section class="sports-section">
-            <h2 class="section-title">Beşiktaş Maç Merkezi</h2>
-            <div class="sports-grid">
-                <div class="sports-card">
-                    <h3>⚽ Beşiktaş Maçları</h3>
-                    <div class="sports-widget"
-                         data-widget-type="entityScores"
-                         data-entity-type="team"
-                         data-entity-id="947"
-                         data-lang="tr"
-                         data-widget-id="adcea188-ce4c-4083-bc35-e22e994887f7">
-                    </div>
-                    <div class="sports-note">Canlı skorlar, fikstür ve sonuçlar 365Scores verileriyle otomatik güncellenir.</div>
-                </div>
 
-                <div class="sports-card">
-                    <h3>🏆 Trendyol Süper Lig Puan Durumu</h3>
-                    <div class="sports-widget"
-                         data-widget-type="entityStandings"
-                         data-entity-type="league"
-                         data-entity-id="78"
-                         data-lang="tr"
-                         data-widget-id="7599e36f-7682-45bb-af20-131557226bdb">
-                    </div>
-                    <div class="sports-note">Puan durumu canlı maç sonuçlarıyla güncellenir.</div>
-                </div>
-            </div>
-        </section>
     </div>
 </div>
 
@@ -281,5 +283,6 @@ function sayfaYonlendir() {
 window.addEventListener('hashchange',sayfaYonlendir);
 document.addEventListener('DOMContentLoaded',haberleriCek);
 </script>
+    <script src="https://widgets.365scores.com/main.js"></script>
 </body>
 </html>
