@@ -165,7 +165,7 @@ const img=gorsel
 : '';
 
 haberKutusu.innerHTML+=`
-<article class="card" onclick="location.href='/haber/'+slugify(haber.title)">
+<a class="card" href="/haber/${encodeURIComponent(slugify(haber.title))}" style="text-decoration:none;color:inherit;">
 ${img}
 <div class="card-body">
 <span class="tag">GÜNCEL</span>
@@ -173,7 +173,7 @@ ${img}
 <p>${escapeHtml(ozet)}${ozet.length>=150?'...':''}</p>
 <button class="read-btn">Detaylı Haberi Oku →</button>
 </div>
-</article>`;
+</a>`;
 });
 
 sayfaYonlendir();
