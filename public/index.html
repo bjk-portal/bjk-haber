@@ -272,7 +272,7 @@ document.getElementById('homePage').style.display='block';
 window.scrollTo(0,0);
 }
 window.addEventListener('popstate',sayfaYonlendir);
-document.addEventListener('DOMContentLoaded',haberleriCek);
+document.addEventListener('DOMContentLoaded',()=>{ if(!window.__ARTICLE_PAGE__) haberleriCek(); });
 </script>
 </body>
 </html>
