@@ -3,284 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Siyah & Beyaz - Güncel Spor Haberleri</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #121212; color: #fff; line-height: 1.6; }
-        .wrap { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-        header { background: #000; padding: 20px 0; border-bottom: 2px solid #333; position: sticky; top: 0; z-index: 100; }
-        header h1 { text-align: center; font-size: 2rem; letter-spacing: 2px; cursor: pointer; }
-        .main-content { padding: 40px 0; }
-        .section-title { font-size: 1.5rem; margin-bottom: 20px; border-left: 4px solid #fff; padding-left: 10px; }
-        .ad-container { width: 100%; margin: 25px 0; display: flex; justify-content: center; align-items: center; }
-        .ad-box { width: 100%; max-width: 728px; min-height: 90px; background: #181818; border: 1px dashed #444; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; padding: 10px; }
-        .ad-box span { font-weight: bold; margin-bottom: 4px; color: #888; }
-        .news-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-        .card { background: #1e1e1e; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #333; cursor: pointer; transition: transform 0.2s; }
-        .card:hover { transform: translateY(-5px); }
-        .card img { width: 100%; height: 180px; object-fit: cover; background-color: #2a2a2a; }
-        .card-body { padding: 15px; display: flex; flex-direction: column; flex-grow: 1; }
-        .tag { background: #e50914; color: #fff; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; align-self: flex-start; margin-bottom: 10px; font-weight: bold; }
-        .card h3 { font-size: 1.1rem; margin-bottom: 10px; color: #fff; line-height: 1.4; }
-        .card p { font-size: 0.9rem; color: #aaa; margin-bottom: 15px; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-        .read-btn { background: #fff; color: #000; font-weight: bold; font-size: 0.85rem; border: none; padding: 8px 12px; border-radius: 4px; text-align: center; margin-top: auto; }
-        .loading { text-align: center; font-size: 1.2rem; color: #888; width: 100%; grid-column: 1 / -1; padding: 40px 0; }
-        #singleNewsPage { display: none; background: #1e1e1e; border-radius: 8px; padding: 35px; border: 1px solid #333; margin-bottom: 40px; }
-        .back-btn { display: inline-block; background: #e50914; color: #fff; padding: 10px 18px; border-radius: 4px; text-decoration: none; margin-bottom: 25px; font-weight: bold; cursor: pointer; border: none; }
-        .back-btn:hover { background: #b80710; }
-        .news-detail-title { font-size: 2.2rem; margin-bottom: 20px; line-height: 1.3; }
-        .news-detail-img { width: 100%; max-height: 500px; object-fit: cover; border-radius: 8px; margin-bottom: 25px; }
-        .news-mid-banner { width: 100%; height: 200px; background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #333333 100%); border-radius: 8px; margin: 30px 0; display: flex; align-items: center; justify-content: center; flex-direction: column; border: 1px solid #444; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center; padding: 20px; }
-        .news-detail-body { font-size: 1.15rem; color: #e0e0e0; line-height: 1.9; }
-        .news-detail-body p { margin-bottom: 20px; }
-        .news-detail-body h3 { margin: 30px 0 12px; color: #fff; font-size: 1.35rem; }
-        .news-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin: 30px 0; }
-        .news-gallery img { width: 100%; height: 220px; object-fit: cover; border-radius: 8px; border: 1px solid #333; }
-        .source-link { margin-top: 30px; }
-        .source-link a { color: #fff; font-weight: bold; }
-        .squad-section { margin-top: 50px; padding: 25px; background: #1e1e1e; border-radius: 8px; border: 1px solid #333; }
-        .squad-table { width: 100%; border-collapse: collapse; text-align: left; color: #fff; margin-top: 15px; }
-        .squad-table th { background: #111; color: #aaa; font-size: 0.85rem; text-transform: uppercase; padding: 12px; border-bottom: 2px solid #333; }
-        .squad-table td { padding: 12px; border-bottom: 1px solid #2a2a2a; font-size: 0.95rem; }
-        .squad-table tr:hover { background: #252525; }
-        .price-tag { color: #2ecc71; font-weight: bold; }
-        footer { background: #000; padding: 20px 0; border-top: 1px solid #333; margin-top: 40px; font-size: 0.85rem; color: #777; }
-        .footer-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-
-        .sports-section { margin-top: 50px; padding: 25px; background: #1e1e1e; border-radius: 8px; border: 1px solid #333; }
-        .sports-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 25px; }
-        .sports-card { background: #121212; border: 1px solid #333; border-radius: 8px; padding: 18px; overflow: hidden; }
-        .sports-card h3 { margin-bottom: 14px; font-size: 1.15rem; }
-        .sports-widget { min-height: 220px; width: 100%; }
-        .sports-note { color:#777; font-size:.78rem; margin-top:10px; }
-        @media (min-width: 900px) { .sports-grid { grid-template-columns: 1fr 1fr; } }
-    </style>
+    <title>Kartal Medya | Beşiktaş Haber Portalı</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-<header><div class="wrap"><h1 onclick="window.location.hash=''">SİYAH & BEYAZ HABER PORTALI</h1></div></header>
-
-<div class="wrap main-content">
-    <div class="ad-container"><div class="ad-box"><span>- REKLAM ALANI -</span>728x90 Banner</div></div>
-
-    <div id="singleNewsPage">
-        <button class="back-btn" onclick="window.location.hash=''">← Tüm Haberlere Dön</button>
-        <h2 class="news-detail-title" id="detailTitle"></h2>
-        <img src="" id="detailImg" class="news-detail-img" alt="Haber Görseli">
-        <div class="news-detail-body" id="detailBody"></div>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="container flex-between">
+            <div class="date-info">
+                <i class="fa-regular fa-calendar-days"></i> <span id="current-date"></span>
+            </div>
+            <div class="social-links">
+                <a href="#" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+                <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                <a href="#" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+            </div>
+        </div>
     </div>
 
-    <div id="homePage">
-        <section class="sports-section">
-            <h2 class="section-title">Beşiktaş Maç Merkezi</h2>
-            <div class="sports-grid">
-                <div class="sports-card">
-                    <h3>⚽ Beşiktaş Maçları (Canlı & Geçmiş)</h3>
-                    <div class="sports-widget"
-                         data-widget-type="entityScores"
-                         data-entity-type="team"
-                         data-entity-id="947"
-                         data-lang="tr"
-                         data-widget-id="adcea188-ce4c-4083-bc35-e22e994887f7">
-                    </div>
-                    <div class="sports-note">Canlı skorlar, fikstür ve sonuçlar otomatik güncellenir.</div>
+    <!-- Header / Navbar -->
+    <header class="site-header">
+        <div class="container flex-between">
+            <a href="index.html" class="logo">
+                <span class="logo-icon">🦅</span>
+                <div class="logo-text">
+                    <h1>KARTAL MEDYA</h1>
+                    <p>Beşiktaş Haberleri & Analiz</p>
                 </div>
+            </a>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html" class="active">Ana Sayfa</a></li>
+                    <li><a href="#haberler">Son Dakika</a></li>
+                    <li><a href="#fikstur">Fikstür</a></li>
+                    <li><a href="#puan-durumu">Puan Durumu</a></li>
+                    <li><a href="#kadro">Kadro</a></li>
+                </ul>
+            </nav>
+            <div class="mobile-menu-btn" id="mobile-toggle">
+                <i class="fa-solid fa-bars"></i>
+            </div>
+        </div>
+    </header>
 
-                <div class="sports-card">
-                    <h3>🏆 Trendyol Süper Lig Puan Durumu</h3>
-                    <div class="sports-widget"
-                         data-widget-type="entityStandings"
-                         data-entity-type="league"
-                         data-entity-id="78"
-                         data-lang="tr"
-                         data-widget-id="7599e36f-7682-45bb-af20-131557226bdb">
+    <!-- Breaking News Ticker -->
+    <div class="ticker-container">
+        <div class="container flex-row">
+            <div class="ticker-label">SON DAKİKA</div>
+            <div class="ticker-content">
+                <p>Beşiktaş'tan transfer operasyonu: Yönetim yeni yıldızlar için görüşmelerini hızlandırdı! • Tüpraş Stadyumu'nda dev maça hazırlıklar tüm hızıyla sürüyor.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero-section container">
+        <div class="hero-grid">
+            <div class="hero-main">
+                <div class="hero-card">
+                    <div class="tag-badge">ÖZEL HABER</div>
+                    <h2>Şanlı Beşiktaş Yeni Sezonda Zirveyi Hedefliyor</h2>
+                    <p>Siyah-beyazlı ekibimizde hazırlıklar tam gaz devam ediyor. Teknik heyet ve futbolcuların hırsı taraftarı umutlandırırken, yeni transferlerin uyum süreci üst seviyede.</p>
+                    <div class="hero-meta">
+                        <span><i class="fa-regular fa-clock"></i> 2 saat önce</span>
+                        <span><i class="fa-regular fa-eye"></i> 14.2 bin okunma</span>
                     </div>
-                    <div class="sports-note">Puan durumu canlı maç sonuçlarıyla eşzamanlı güncellenir.</div>
+                </div>
+            </div>
+            <div class="hero-sidebar">
+                <div class="side-news-card">
+                    <span class="tag-small">FUTBOL</span>
+                    <h4>Tüpraş Stadyumu'nda Kombine İlgi</h4>
+                    <p>Büyük Beşiktaş taraftarı kombinelere akın etti.</p>
+                </div>
+                <div class="side-news-card">
+                    <span class="tag-small">KAMP</span>
+                    <h4>Avusturya Kampı Sona Erdi</h4>
+                    <p>Takım İstanbul'a moralli döndü.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Grid -->
+    <main class="container main-content-grid" id="haberler">
+        <section class="news-feed">
+            <div class="section-title">
+                <h3>Son Haberler</h3>
+                <div class="title-line"></div>
+            </div>
+
+            <div class="news-card-horizontal">
+                <div class="news-img-placeholder">⚽</div>
+                <div class="news-details">
+                    <span class="category-tag">Maç Analizi</span>
+                    <h3>Derbi Öncesi Takımda Son Durum ve Muhtemel 11</h3>
+                    <p>Teknik direktörün sahaya sürmesi beklenen taktik diziliş ve kritik oyuncu eşleşmeleri detaylı analizimizle karşınızda.</p>
+                    <div class="news-footer">
+                        <span><i class="fa-regular fa-clock"></i> 5 saat önce</span>
+                        <a href="#" class="read-more">Devamını Oku <i class="fa-solid fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="news-card-horizontal">
+                <div class="news-img-placeholder">🦅</div>
+                <div class="news-details">
+                    <span class="category-tag">Transfer</span>
+                    <h3>Yıldız Futbolcudan Siyah-Beyazlı Taraftara Mesaj</h3>
+                    <p>"Burada olmaktan ve bu formayı giymekten büyük gurur duyuyorum. Şampiyonluk için her şeyimizi vereceğiz."</p>
+                    <div class="news-footer">
+                        <span><i class="fa-regular fa-clock"></i> 1 gün önce</span>
+                        <a href="#" class="read-more">Devamını Oku <i class="fa-solid fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="news-card-horizontal">
+                <div class="news-img-placeholder">🏟️</div>
+                <div class="news-details">
+                    <span class="category-tag">Kulüp</span>
+                    <h3>Altyapıdan A Takıma Yükselen Genç Yetenekler</h3>
+                    <p>Beşiktaş futbol akademisinin meyveleri toplamaya devam ettiği yeni nesil yetenekler profesyonel sözleşmeye imza attı.</p>
+                    <div class="news-footer">
+                        <span><i class="fa-regular fa-clock"></i> 2 gün önce</span>
+                        <a href="#" class="read-more">Devamını Oku <i class="fa-solid fa-arrow-right"></i></a>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <h2 class="section-title">Gündemdeki Haberler</h2>
-        <div class="news-grid" id="newsGrid">
-            <div class="loading">Güncel Beşiktaş haberleri yükleniyor...</div>
-        </div>
-
-        <div class="ad-container"><div class="ad-box"><span>- REKLAM ALANI -</span>728x90 Esnek Banner</div></div>
-
-        <section class="squad-section">
-            <h2 class="section-title">Beşiktaş - Son Maç İlk 11'i & Piyasa Değerleri</h2>
-            <div style="overflow-x:auto;">
-                <table class="squad-table">
-                    <thead><tr><th>Mevki</th><th>Oyuncu</th><th>Piyasa Değeri</th></tr></thead>
+        <!-- Sidebar Widgets -->
+        <aside class="sidebar-widgets">
+            <!-- Puan Durumu Widget -->
+            <div class="widget" id="puan-durumu">
+                <div class="widget-title">
+                    <i class="fa-solid fa-trophy"></i> Süper Lig Puan Durumu
+                </div>
+                <table class="standings-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Takım</th>
+                            <th>O</th>
+                            <th>Av</th>
+                            <th>P</th>
+                        </tr>
+                    </thead>
                     <tbody>
-                        <tr><td>Kaleci</td><td>Alexander Nübel</td><td class="price-tag">12.00 Mil. €</td></tr>
-                        <tr><td>Sağ Bek</td><td>Amir Murillo</td><td class="price-tag">7.00 Mil. €</td></tr>
-                        <tr><td>Stoper</td><td>Tiago Djaló</td><td class="price-tag">7.00 Mil. €</td></tr>
-                        <tr><td>Stoper</td><td>Emirhan Topçu</td><td class="price-tag">7.00 Mil. €</td></tr>
-                        <tr><td>Sol Bek</td><td>Rıdvan Yılmaz</td><td class="price-tag">5.00 Mil. €</td></tr>
-                        <tr><td>Ön Libero / Merkez</td><td>Salih Özcan</td><td class="price-tag">3.50 Mil. €</td></tr>
-                        <tr><td>Merkez Orta Saha</td><td>Orkun Kökçü</td><td class="price-tag">25.00 Mil. €</td></tr>
-                        <tr><td>Sağ Kanat</td><td>Václav Černý</td><td class="price-tag">7.00 Mil. €</td></tr>
-                        <tr><td>On Numara</td><td>Junior Olaitan</td><td class="price-tag">7.00 Mil. €</td></tr>
-                        <tr><td>Sol Kanat</td><td>Leandro Trossard</td><td class="price-tag">18.00 Mil. €</td></tr>
-                        <tr><td>Santrafor</td><td>Hyeon-gyu Oh</td><td class="price-tag">15.00 Mil. €</td></tr>
+                        <tr class="highlight-bjk">
+                            <td>1</td>
+                            <td><strong>BEŞİKTAŞ</strong></td>
+                            <td>3</td>
+                            <td>+7</td>
+                            <td><strong>9</strong></td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Galatasaray</td>
+                            <td>3</td>
+                            <td>+5</td>
+                            <td>7</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>Fenerbahçe</td>
+                            <td>3</td>
+                            <td>+4</td>
+                            <td>7</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>Trabzonspor</td>
+                            <td>3</td>
+                            <td>+2</td>
+                            <td>6</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
-        </section>
-    </div>
-</div>
 
-<footer><div class="wrap footer-inner"><p>&copy; 2026 Siyah &amp; Beyaz. Tüm hakları saklıdır.</p></div></footer>
-
-<script>
-let haberlerVerisi = [];
-const articleCache = new Map();
-const requestLock = new Set();
-
-function temizMetin(x='') {
-    return String(x)
-      .replace(/<script[\s\S]*?<\/script>/gi,'')
-      .replace(/<style[\s\S]*?<\/style>/gi,'')
-      .replace(/<[^>]*>/g,' ')
-      .replace(/&nbsp;/gi,' ')
-      .replace(/&amp;/gi,'&')
-      .replace(/&quot;/gi,'"')
-      .replace(/&#39;/gi,"'")
-      .replace(/Devamını okuyun/gi,'')
-      .replace(/Devamı için tıklayınız/gi,'')
-      .replace(/\s+/g,' ')
-      .trim();
-}
-
-function gorselleriBul(h) {
-    const a=[];
-    const i=h.thumbnail || h.enclosure?.link || h.image;
-    if(i) a.push(i);
-    [...(h.description||'').matchAll(/<img[^>]+src=["']([^"']+)["']/gi)]
-      .forEach(m=>{ if(m[1] && !a.includes(m[1])) a.push(m[1]); });
-    return a.slice(0,5);
-}
-
-function escapeHtml(v='') {
-    return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-}
-
-function metniHTMLYap(m='') {
-    return String(m).split(/\r?\n/).map(s=>s.trim()).filter(Boolean).map(s=>{
-        const e=escapeHtml(s);
-        return /^#{1,3}\s+/.test(s)
-          ? `<h3>${e.replace(/^#{1,3}\s+/,'')}</h3>`
-          : `<p>${e}</p>`;
-    }).join('');
-}
-
-async function haberleriCek() {
-    const kutu=document.getElementById('newsGrid');
-    try {
-        const r=await fetch('/api/news',{cache:'no-store'});
-        const d=await r.json();
-        if(!r.ok) throw new Error(d.error || `Haber API HTTP ${r.status}`);
-        if(!Array.isArray(d.items) || !d.items.length) throw new Error('RSS haber bulunamadı.');
-
-        kutu.innerHTML='';
-        haberlerVerisi=d.items;
-
-        haberlerVerisi.forEach((h,i)=>{
-            const g=gorselleriBul(h)[0] || 'https://via.placeholder.com/400x200?text=Siyah+Beyaz';
-            const o=temizMetin(h.description).slice(0,180)+'...';
-            kutu.innerHTML += `
-              <article class="card" onclick="location.hash='haber-${i}'">
-                <img src="${escapeHtml(g)}" alt="Haber Görseli"
-                     onerror="this.src='https://via.placeholder.com/400x200?text=Siyah+Beyaz'">
-                <div class="card-body">
-                  <span class="tag">SON DAKİKA</span>
-                  <h3>${escapeHtml(h.title||'')}</h3>
-                  <p>${escapeHtml(o)}</p>
-                  <button class="read-btn">Detaylı Haberi Oku →</button>
+            <!-- Fikstür Widget -->
+            <div class="widget" id="fikstur">
+                <div class="widget-title">
+                    <i class="fa-solid fa-calendar-alt"></i> Gelecek Maçlar
                 </div>
-              </article>`;
-        });
-        sayfaYonlendir();
-    } catch(e) {
-        console.error('Haber API hatası:',e);
-        kutu.innerHTML=`<div class="loading">
-          Haberler yüklenemedi.<br>
-          <small style="color:#666">${escapeHtml(e.message)}</small>
-        </div>`;
-    }
-}
+                <div class="fixture-item">
+                    <div class="fixture-teams">
+                        <span>Beşiktaş</span>
+                        <span class="vs">VS</span>
+                        <span>Rizespor</span>
+                    </div>
+                    <div class="fixture-date">30 Ağustos 2026 • 21:00</div>
+                </div>
+                <div class="fixture-item">
+                    <div class="fixture-teams">
+                        <span>Galatasaray</span>
+                        <span class="vs">VS</span>
+                        <span>Beşiktaş</span>
+                    </div>
+                    <div class="fixture-date">12 Eylül 2026 • 20:00</div>
+                </div>
+            </div>
+        </aside>
+    </main>
 
-async function haberAc(i) {
-    const h=haberlerVerisi[i];
-    if(!h) return;
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container footer-grid">
+            <div>
+                <div class="logo footer-logo">
+                    <span class="logo-icon">🦅</span>
+                    <div class="logo-text">
+                        <h2>KARTAL MEDYA</h2>
+                    </div>
+                </div>
+                <p class="footer-desc">Beşiktaş JK taraftarları için bağımsız ve tarafsız haber portalı. En güncel siyah-beyaz haberler.</p>
+            </div>
+            <div>
+                <h4>Hızlı Bağlantılar</h4>
+                <ul class="footer-links">
+                    <li><a href="index.html">Ana Sayfa</a></li>
+                    <li><a href="#haberler">Son Dakika</a></li>
+                    <li><a href="#fikstur">Fikstür</a></li>
+                    <li><a href="#puan-durumu">Puan Durumu</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Yasal Uyarı</h4>
+                <p class="footer-desc">Bu site Beşiktaş taraftarları tarafından bilgilendirme amaçlı kurulmuştur. Beşiktaş Jimnastik Kulübü'nün resmi web sitesi değildir.</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Kartal Medya. Tüm hakları saklıdır.</p>
+        </div>
+    </footer>
 
-    const g=gorselleriBul(h);
-    const ana=g[0] || 'https://via.placeholder.com/1200x600?text=Siyah+Beyaz';
-    const kaynak=temizMetin(h.description);
-    const k=`${h.title}|${kaynak}`;
-
-    document.getElementById('detailTitle').innerText=h.title || '';
-    document.getElementById('detailImg').src=ana;
-    document.getElementById('detailImg').onerror=function(){
-        this.src='https://via.placeholder.com/1200x600?text=Siyah+Beyaz';
-    };
-    document.getElementById('homePage').style.display='none';
-    document.getElementById('singleNewsPage').style.display='block';
-    window.scrollTo(0,0);
-
-    const b=document.getElementById('detailBody');
-    if(articleCache.has(k)){ detayliHaberGoster(articleCache.get(k),g,h.link); return; }
-    if(requestLock.has(k)) return;
-
-    requestLock.add(k);
-    b.innerHTML='<div class="loading"><p>Yapay zekâ haberi detaylandırıyor...</p><p style="font-size:.9rem;margin-top:8px">Yaklaşık 1.000-1.500 kelimelik özgün haber hazırlanıyor.</p></div>';
-
-    try {
-        const r=await fetch('/api/generate-news',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({title:h.title||'',description:kaynak,link:h.link||''})
-        });
-        const x=await r.json();
-        if(!r.ok || !x.article) throw new Error(x.error||'AI haber üretilemedi');
-        articleCache.set(k,x.article);
-        detayliHaborGoster(x.article,g,h.link);
-    } catch(e) {
-        console.error('AI haber hatası:',e);
-        detayliHaberGoster(
-          `## Haber Özeti\n${kaynak||'Kaynak metni bulunamadı.'}\n\n## Bilgi\nYapay zekâ ile genişletilmiş haber şu anda oluşturulamadı. Biraz sonra tekrar deneyebilirsin.`,
-          g,h.link
-        );
-    } finally {
-        requestLock.delete(k);
-    }
-}
-
-function detayliHaberGoster(m,g,l) {
-    const gal=g.length>1
-      ? `<div class="news-gallery">${g.map(s=>`<img src="${escapeHtml(s)}" alt="Haber görseli" onerror="this.style.display='none'">`).join('')}</div>`
-      : '';
-    const ad='<div class="ad-container"><div class="ad-box"><span>- REKLAM ALANI -</span>Haber İçi 728x90 veya Esnek Banner</div></div>';
-    const sl=l?`<p class="source-link"><a href="${escapeHtml(l)}" target="_blank" rel="noopener noreferrer">Kaynak haberi görüntüle →</a></p>`:'';
-    document.getElementById('detailBody').innerHTML=metniHTMLYap(m)+gal+ad+sl;
-}
-
-function sayfaYonlendir() {
-    const h=window.location.hash;
-    if(h.startsWith('#haber-')){
-        const i=parseInt(h.replace('#haber-',''));
-        if(!isNaN(i) && haberlerVerisi[i]) haberAc(i);
-    } else {
-        document.getElementById('singleNewsPage').style.display='none';
-        document.getElementById('homePage').style.display='block';
-        window.scrollTo(0,0);
-    }
-}
-
-window.addEventListener('hashchange',sayfaYonlendir);
-document.addEventListener('DOMContentLoaded',haberleriCek);
-</script>
-<script src="https://widgets.365scores.com/main.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
