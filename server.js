@@ -300,7 +300,7 @@ function renderArticlePage(item) {
     ...(image ? { image: [image] } : {}),
     publisher: { "@type": "Organization", name: "Siyah & Beyaz", url: SITE_URL }
   })}</script>`;
-  html = html.replace("</head>", `<script>window.__ARTICLE_PAGE__=true;</script>${structured}</head>`);
+  html = html.replace("</head>", `<script>window.__ARTICLE_PAGE__=true;window.__ARTICLE_DATA__=${JSON.stringify(item).replace(/</g, "\u003c")};</script>${structured}</head>`);
 
   html = html.replace('<div id="singleNewsPage">', '<div id="singleNewsPage" style="display:block">');
   html = html.replace('<div id="homePage">', '<div id="homePage" style="display:none">');

@@ -272,7 +272,25 @@ document.getElementById('homePage').style.display='block';
 window.scrollTo(0,0);
 }
 window.addEventListener('popstate',sayfaYonlendir);
-document.addEventListener('DOMContentLoaded',()=>{ if(!window.__ARTICLE_PAGE__) haberleriCek(); });
+document.addEventListener('DOMContentLoaded',()=>{
+if(window.__ARTICLE_PAGE__ && window.__ARTICLE_DATA__){
+const haber=window.__ARTICLE_DATA__;
+document.getElementById('detailTitle').innerText=haber.title||'';
+const img=document.getElementById('detailImg');
+const gorsel=haberGorseli(haber);
+if(gorsel){img.src=gorsel;img.style.display='block';}else{img.style.display='none';}
+document.getElementById('detailBody').innerHTML='<div class=\"loading\">Haber hazırlanıyor...</div>';
+fetch('/api/generate-news',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:haber.title||'',description:haber.description||'',link:haber.link||''})})
+.then(r=>r.json().then(data=>({ok:r.ok,data})))
+.then(({ok,data})=>{
+if(!ok) throw new Error(data.error||'Haber oluşturulamadı');
+const html=markdownToHtml(data.article||'');
+const fallbackNote=data.type==='fallback'?'<div style=\"margin:0 0 20px;padding:12px 14px;border:1px solid #444;border-radius:6px;background:#151515;color:#aaa;font-size:.9rem\">AI özeti şu anda kullanılamıyor; haber kaynak metninden gösteriliyor. Kota açıldığında yeni haberlerde AI özeti otomatik kullanılacaktır.</div>':'';
+document.getElementById('detailBody').innerHTML=fallbackNote+html+'<div class=\"ad-container\"><div class=\"ad-box\"><span>- REKLAM ALANI -</span>Haber İçi 728x90 veya Esnek Banner</div></div><div class=\"news-mid-banner\"><h3>SİYAH & BEYAZ ÖZEL HABER</h3><p>FORMA AŞKIYLA SİYAH BEYAZ DEVAM!</p></div><p><a class=\"source-link\" href=\"'+escapeHtml(haber.link||'#')+'\" target=\"_blank\" rel=\"noopener\">Kaynak haberi görüntüle →</a></p>';
+})
+.catch(error=>{document.getElementById('detailBody').innerHTML='<p>Bu haberin ayrıntılı metni şu anda oluşturulamadı.</p><p style=\"color:#888\">'+escapeHtml(error.message)+'</p><p><a class=\"source-link\" href=\"'+escapeHtml(haber.link||'#')+'\" target=\"_blank\" rel=\"noopener\">Kaynak haberi aç →</a></p>';});
+}else haberleriCek();
+});
 </script>
 </body>
 </html>
