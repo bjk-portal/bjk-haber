@@ -251,9 +251,121 @@ function markdownToHtml(md) {
     .join("");
 }
 
+
+const SITE_URL = "https://bjk-haber.onrender.com";
+
+function slugify(value = "") {
+  return String(value).toLowerCase()
+    .replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ş/g, "s")
+    .replace(/ı/g, "i").replace(/ö/g, "o").replace(/ç/g, "c")
+    .normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+}
+
+function xmlEscape(value = "") {
+  return String(value)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+
+function htmlEscape(value = "") {
+  return String(value)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function renderArticlePage(item) {
+  let html = fs.readFileSync(path.join(ROOT, "public", "index.html"), "utf8");
+  const title = item.title || "Beşiktaş Haberleri";
+  const description = stripHtml(item.description || "Beşiktaş güncel haberleri ve son gelişmeler.").slice(0, 300);
+  const slug = slugify(title);
+  const url = `${SITE_URL}/haber/${encodeURIComponent(slug)}`;
+  const image = item.thumbnail || "";
+  const published = item.pubDate ? new Date(item.pubDate) : null;
+  const datePublished = published && !Number.isNaN(published.getTime()) ? published.toISOString() : new Date().toISOString();
+
+  html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${htmlEscape(title)} | Siyah &amp; Beyaz</title>`);
+  html = html.replace(/<meta name="description"[^>]*>/i, `<meta name="description" content="${htmlEscape(description)}">`);
+  html = html.replace(/<link rel="canonical"[^>]*>/i, `<link rel="canonical" href="${htmlEscape(url)}">`);
+  html = html.replace(/<meta name="robots"[^>]*>/i, `<meta name="robots" content="index,follow,max-image-preview:large">`);
+
+  const structured = `<script type="application/ld+json">${JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    headline: title,
+    description,
+    datePublished,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    ...(image ? { image: [image] } : {}),
+    publisher: { "@type": "Organization", name: "Siyah & Beyaz", url: SITE_URL }
+  })}</script>`;
+  html = html.replace("</head>", `${structured}</head>`);
+
+  html = html.replace('<div id="singleNewsPage">', '<div id="singleNewsPage" style="display:block">');
+  html = html.replace('<div id="homePage">', '<div id="homePage" style="display:none">');
+  html = html.replace('<h2 class="news-detail-title" id="detailTitle"></h2>', `<h2 class="news-detail-title" id="detailTitle">${htmlEscape(title)}</h2>`);
+  html = html.replace('<div class="news-detail-body" id="detailBody"></div>', `<div class="news-detail-body" id="detailBody"><p>${htmlEscape(description)}</p><p><a class="source-link" href="${htmlEscape(item.link || '#')}" target="_blank" rel="noopener">Kaynak haberi görüntüle →</a></p></div>`);
+  if (image) html = html.replace('<img src="" id="detailImg" class="news-detail-img" alt="Haber Görseli" style="display:none">', `<img src="${htmlEscape(image)}" id="detailImg" class="news-detail-img" alt="${htmlEscape(title)}">`);
+  return html;
+}
+
+async function buildSitemap() {
+  const items = await getNews();
+  const urls = [`  <url><loc>${SITE_URL}/</loc></url>`];
+  for (const item of items) {
+    const slug = slugify(item.title);
+    if (!slug) continue;
+    const last = item.pubDate ? new Date(item.pubDate) : null;
+    const lastmod = last && !Number.isNaN(last.getTime()) ? `<lastmod>${last.toISOString()}</lastmod>` : "";
+    urls.push(`  <url><loc>${SITE_URL}/haber/${encodeURIComponent(slug)}</loc>${lastmod}<changefreq>hourly</changefreq><priority>0.8</priority></url>`);
+  }
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>`;
+}
+
 http.createServer(async (req, res) => {
   try {
     const u = new URL(req.url, `http://${req.headers.host}`);
+
+    if (req.method === "GET" && u.pathname === "/sitemap.xml") {
+      try {
+        const xml = await buildSitemap();
+        res.writeHead(200, { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=300" });
+        return res.end(xml);
+      } catch (e) {
+        console.error("Sitemap hatası:", e);
+        res.writeHead(502, { "Content-Type": "application/xml; charset=utf-8" });
+        return res.end(`<?xml version="1.0" encoding="UTF-8"?><error>${xmlEscape(e.message)}</error>`);
+      }
+    }
+
+    if (req.method === "GET" && u.pathname === "/robots.txt") {
+      const robots = `User-agent: *\nAllow: /\n\nSitemap: ${SITE_URL}/sitemap.xml\n`;
+      res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" });
+      return res.end(robots);
+    }
+
+    if (req.method === "GET" && u.pathname.startsWith("/haber/")) {
+      const slug = decodeURIComponent(u.pathname.slice("/haber/".length));
+      if (!slug || slug.includes("/")) {
+        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        return res.end("Haber bulunamadı.");
+      }
+      try {
+        const items = await getNews();
+        const item = items.find(x => slugify(x.title) === slug);
+        if (!item) {
+          res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
+          return res.end("<!doctype html><html lang=\"tr\"><meta charset=\"utf-8\"><title>Haber bulunamadı</title><p>Haber bulunamadı.</p>");
+        }
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=300" });
+        return res.end(renderArticlePage(item));
+      } catch (e) {
+        console.error("Haber sayfası hatası:", e);
+        res.writeHead(502, { "Content-Type": "text/plain; charset=utf-8" });
+        return res.end("Haber şu anda yüklenemiyor.");
+      }
+    }
 
     if (req.method === "GET" && u.pathname === "/api/news") {
       try {

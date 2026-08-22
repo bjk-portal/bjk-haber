@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX8152DBD4"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-FX8152DBD4');
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Siyah & Beyaz - Güncel Spor Haberleri</title>
+<meta name="description" content="Beşiktaş güncel haberleri, son dakika gelişmeleri ve siyah-beyazlı gündem.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://bjk-haber.onrender.com/">
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX8152DBD4"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-FX8152DBD4');
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}
 body{background:#121212;color:#fff;line-height:1.6}
@@ -58,14 +60,14 @@ footer{background:#000;padding:20px 0;border-top:1px solid #333;margin-top:40px;
 </head>
 <body>
 <header>
-<div class="wrap"><h1 onclick="window.location.hash=''">SİYAH & BEYAZ HABER PORTALI</h1></div>
+<div class="wrap"><h1 onclick="window.location.href='/'">SİYAH & BEYAZ HABER PORTALI</h1></div>
 </header>
 
 <div class="wrap main-content">
 <div class="ad-container"><div class="ad-box"><span>- REKLAM ALANI -</span>728x90 Banner</div></div>
 
 <div id="singleNewsPage">
-<button class="back-btn" onclick="window.location.hash=''">← Tüm Haberlere Dön</button>
+<button class="back-btn" onclick="window.location.href='/'">← Tüm Haberlere Dön</button>
 <h2 class="news-detail-title" id="detailTitle"></h2>
 <img src="" id="detailImg" class="news-detail-img" alt="Haber Görseli" style="display:none">
 <div class="news-detail-body" id="detailBody"></div>
@@ -108,6 +110,13 @@ footer{background:#000;padding:20px 0;border-top:1px solid #333;margin-top:40px;
 <script>
 let haberlerVerisi = [];
 let haberYukleniyor = false;
+
+function slugify(value=''){
+return String(value).toLowerCase()
+.replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
+.normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
+.replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,120);
+}
 
 function escapeHtml(value=''){
 return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -156,7 +165,7 @@ const img=gorsel
 : '';
 
 haberKutusu.innerHTML+=`
-<article class="card" onclick="location.hash='haber-${index}'">
+<article class="card" onclick="location.href='/haber/'+slugify(haber.title)">
 ${img}
 <div class="card-body">
 <span class="tag">GÜNCEL</span>
@@ -249,22 +258,20 @@ return safe.split(/\n\s*\n/)
 }
 
 function sayfaYonlendir(){
-const hash=window.location.hash;
-
-if(hash.startsWith('#haber-')){
-const index=parseInt(hash.replace('#haber-',''),10);
-if(!isNaN(index)&&haberlerVerisi[index]){
-haberAc(index);
-return;
+const pathname=window.location.pathname;
+if(pathname.startsWith('/haber/')){
+const slug=decodeURIComponent(pathname.slice('/haber/'.length));
+const index=haberlerVerisi.findIndex(h=>slugify(h.title)===slug);
+if(index>=0){
+  haberAc(index);
+  return;
 }
 }
-
 document.getElementById('singleNewsPage').style.display='none';
 document.getElementById('homePage').style.display='block';
 window.scrollTo(0,0);
 }
-
-window.addEventListener('hashchange',sayfaYonlendir);
+window.addEventListener('popstate',sayfaYonlendir);
 document.addEventListener('DOMContentLoaded',haberleriCek);
 </script>
 </body>
