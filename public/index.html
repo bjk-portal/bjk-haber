@@ -74,7 +74,7 @@
             <h2 class="section-title">Beşiktaş Maç Merkezi</h2>
             <div class="sports-grid">
                 <div class="sports-card">
-                    <h3>⚽ Beşiktaş Maçları</h3>
+                    <h3>⚽ Beşiktaş Maçları (Canlı & Geçmiş)</h3>
                     <div class="sports-widget"
                          data-widget-type="entityScores"
                          data-entity-type="team"
@@ -82,7 +82,7 @@
                          data-lang="tr"
                          data-widget-id="adcea188-ce4c-4083-bc35-e22e994887f7">
                     </div>
-                    <div class="sports-note">Canlı skorlar, fikstür ve sonuçlar 365Scores verileriyle otomatik güncellenir.</div>
+                    <div class="sports-note">Canlı skorlar, fikstür ve sonuçlar otomatik güncellenir.</div>
                 </div>
 
                 <div class="sports-card">
@@ -94,7 +94,7 @@
                          data-lang="tr"
                          data-widget-id="7599e36f-7682-45bb-af20-131557226bdb">
                     </div>
-                    <div class="sports-note">Puan durumu canlı maç sonuçlarıyla güncellenir.</div>
+                    <div class="sports-note">Puan durumu canlı maç sonuçlarıyla eşzamanlı güncellenir.</div>
                 </div>
             </div>
         </section>
@@ -127,8 +127,6 @@
                 </table>
             </div>
         </section>
-
-
     </div>
 </div>
 
@@ -247,7 +245,7 @@ async function haberAc(i) {
         const x=await r.json();
         if(!r.ok || !x.article) throw new Error(x.error||'AI haber üretilemedi');
         articleCache.set(k,x.article);
-        detayliHaberGoster(x.article,g,h.link);
+        detayliHaborGoster(x.article,g,h.link);
     } catch(e) {
         console.error('AI haber hatası:',e);
         detayliHaberGoster(
@@ -283,6 +281,6 @@ function sayfaYonlendir() {
 window.addEventListener('hashchange',sayfaYonlendir);
 document.addEventListener('DOMContentLoaded',haberleriCek);
 </script>
-    <script src="https://widgets.365scores.com/main.js"></script>
+<script src="https://widgets.365scores.com/main.js"></script>
 </body>
 </html>

@@ -37,7 +37,7 @@ function decodeXml(s=''){
 }
 
 function tagValue(block,tag){
-  const re=new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`,'i');
+  const re=new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\S]*?)<\\/${tag}>`,'i');
   const m=block.match(re);
   return m ? decodeXml(m[1]).trim() : '';
 }
@@ -56,7 +56,7 @@ async function getNews(){
   if(!r.ok)throw new Error(`RSS HTTP ${r.status}`);
   const xml=await r.text();
 
-  const blocks=[...xml.matchAll(/<item(?:\s[^>]*)?>([\s\S]*?)<\/item>/gi)].map(m=>m[1]);
+  const blocks=[...xml.matchAll(/<item(?:\s[^>]*)?>([\s\S]*?)<\\/item>/gi)].map(m=>m[1]);
   const items=blocks.slice(0,20).map(block=>{
     const title=tagValue(block,'title');
     const link=tagValue(block,'link');
